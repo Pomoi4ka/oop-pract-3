@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 import impl.AbstractParser;
-import impl.AbstractParserSelector;
+import impl.ParserSelector;
 
-public class ExtensionParserSelector implements AbstractParserSelector<String> {
+public class ExtensionParserSelector implements ParserSelector<String> {
     private Map<String, AbstractParser> parserDispatchExtensionTable;
 
     public ExtensionParserSelector() {
