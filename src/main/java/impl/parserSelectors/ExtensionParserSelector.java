@@ -7,7 +7,7 @@ import java.util.HashMap;
 import impl.AbstractParser;
 import impl.AbstractParserSelector;
 
-public class ExtensionParserSelector extends AbstractParserSelector<String> {
+public class ExtensionParserSelector implements AbstractParserSelector<String> {
     private Map<String, AbstractParser> parserDispatchExtensionTable;
 
     public ExtensionParserSelector() {
