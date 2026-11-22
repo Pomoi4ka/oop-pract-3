@@ -9,14 +9,8 @@ import impl.parserSelectors.ExtensionParserSelector;
 public class Main {
     private void run(Path path) {
         ExtensionParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
-        String ext = path.toString()
-            .toLowerCase()
-            .chars()
-            .boxed()
-            .reduce("", (acc, e) -> {
-                    if (e == '.') acc = "";
-                    return acc += String.valueOf((char)e.intValue());
-                }, (u, e) -> u += e);
+        String pathStringLowerCase = path.toString().toLowerCase();
+        String ext = pathStringLowerCase.substring(pathStringLowerCase.lastIndexOf('.'));
         Optional<AbstractParser> parser = selector.select(ext);
         if (!parser.isPresent()) {
             System.err.printf("error: no parser found for extension %s\n", ext);
@@ -25,9 +19,7 @@ public class Main {
 
         try {
             Report report = parser.get().parseFile(path);
-            System.out.println(report.timeSpent);
-            System.out.println(report.duplicates);
-            System.out.println(report.floors);
+            System.out.println(report);
         } catch (Exception e) {
             System.err.println(e);
             System.exit(1);
@@ -36,6 +28,7 @@ public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter filename: ");
         Path path = Path.of(scanner.nextLine());
         new Main().run(path);
     }
