@@ -1,13 +1,12 @@
 package impl;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.time.Duration;
 
 class Report {
-    public Duration timeSpent;
-    public Map<Record, Integer> duplicates;
-    public Map<Integer, Integer> floors;
+    private Duration timeSpent;
+    private Map<Record, Integer> duplicates;
+    private Map<Integer, Integer> floors;
 
     @Override
     public String toString() {
@@ -20,8 +19,9 @@ class Report {
         return sb.toString();
     }
 
-    public Report() {
-        duplicates = new HashMap<>();
-        floors = new HashMap<>();
+    public Report(Duration timeSpent, Map<Record, Integer> duplicates, Map<Integer, Integer> floors) {
+        this.timeSpent = timeSpent;
+        this.duplicates = duplicates;
+        this.floors = floors;
     }
 }

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.Map;
+import java.util.HashMap;
 
 import impl.Record;
 import impl.Report;
@@ -17,8 +19,9 @@ public abstract class AbstractParser {
 
     public Report parseFile(Path file) throws Exception {
         Instant timeStart = Instant.now();
-        Report report = new Report();
         Set<Record> records = new HashSet<>();
+        Map<Record, Integer> dups = new HashMap<>();
+        Map<Integer, Integer> floors = new HashMap<>();
 
         try {
             initParser(file);
@@ -26,15 +29,14 @@ public abstract class AbstractParser {
                 Record rec = parseRecord();
                 if (rec == null) break;
                 if (!records.add(rec))
-                    report.duplicates.compute(rec, (k, v) -> v == null ? 1 : v + 1);
+                    dups.compute(rec, (k, v) -> v == null ? 1 : v + 1);
                 else
-                    report.floors.compute(rec.floor, (k, v) -> v == null ? 1 : v + 1);
+                    floors.compute(rec.floor, (k, v) -> v == null ? 1 : v + 1);
             }
         } finally {
             close();
         }
 
-        report.timeSpent = Duration.between(timeStart, Instant.now());
-        return report;
+        return new Report(Duration.between(timeStart, Instant.now()), dups, floors);
     }
 }
