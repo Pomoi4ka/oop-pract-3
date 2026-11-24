@@ -6,7 +6,7 @@ import java.time.Duration;
 class Report {
     private Duration timeSpent;
     private Map<Record, Integer> duplicates;
-    private Map<Integer, Integer> floors;
+    private Map<String, Map<Integer, Integer>> floors;
 
     @Override
     public String toString() {
@@ -15,11 +15,14 @@ class Report {
         sb.append("Duplicates:\n");
         duplicates.forEach((k, v) -> sb.append("\t" + k + " repeated " + v + " times\n"));
         sb.append("Floors:\n");
-        floors.forEach((k, v) -> sb.append("\t" + k + " floors buildings is " + v + " amount\n"));
+        floors.forEach((city, floors) -> {
+            sb.append("\t" + city + ":\n");
+            floors.forEach((k, v) -> sb.append("\t\t" + k + " floors buildings is " + v + " amount\n"));
+        });
         return sb.toString();
     }
 
-    public Report(Duration timeSpent, Map<Record, Integer> duplicates, Map<Integer, Integer> floors) {
+    public Report(Duration timeSpent, Map<Record, Integer> duplicates, Map<String, Map<Integer, Integer>> floors) {
         this.timeSpent = timeSpent;
         this.duplicates = duplicates;
         this.floors = floors;

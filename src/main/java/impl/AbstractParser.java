@@ -21,7 +21,7 @@ public abstract class AbstractParser {
         Instant timeStart = Instant.now();
         Set<Record> records = new HashSet<>();
         Map<Record, Integer> dups = new HashMap<>();
-        Map<Integer, Integer> floors = new HashMap<>();
+        Map<String, Map<Integer, Integer>> cityFloors = new HashMap<>();
 
         try {
             initParser(file);
@@ -31,12 +31,13 @@ public abstract class AbstractParser {
                 if (!records.add(rec))
                     dups.compute(rec, (k, v) -> v == null ? 1 : v + 1);
                 else
-                    floors.compute(rec.floor, (k, v) -> v == null ? 1 : v + 1);
+                    cityFloors.computeIfAbsent(rec.city, k -> new HashMap<>())
+                        .compute(rec.floor, (k, v) -> v == null ? 1 : v + 1);
             }
         } finally {
             close();
         }
 
-        return new Report(Duration.between(timeStart, Instant.now()), dups, floors);
+        return new Report(Duration.between(timeStart, Instant.now()), dups, cityFloors);
     }
 }
