@@ -8,7 +8,7 @@ import impl.parserSelectors.ExtensionParserSelector;
 
 public class Main {
     private void run(Path path) {
-        ExtensionParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
+        ParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
         String pathStringLowerCase = path.toString().toLowerCase();
         String ext = pathStringLowerCase.substring(pathStringLowerCase.lastIndexOf('.'));
         Optional<AbstractParser> parser = selector.select(ext);
