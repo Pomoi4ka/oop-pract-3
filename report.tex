@@ -1,0 +1,402 @@
+\documentclass[12pt]{extarticle}
+
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{extsizes}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage[english,russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper]{geometry}
+\geometry{top=20mm,bottom=30mm,left=20mm,right=15mm}
+\usepackage[T1,T2A]{fontenc}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{caption}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage{spverbatim}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tabularray}
+\lstset{extendedchars=\true}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    pdftitle={Работа со справочниками городов},
+}
+
+\definecolor{sessionbg}{gray}{0.96}
+\definecolor{sessionframe}{gray}{0.55}
+
+\lstdefinestyle{session}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    framesep=6pt,
+    framerule=0.4pt,
+    rulecolor=\color{sessionframe},
+    backgroundcolor=\color{sessionbg},
+    showstringspaces=false,
+    upquote=true,
+    aboveskip=8pt,
+    belowskip=8pt,
+    captionpos=b,
+    xleftmargin=0pt,
+    xrightmargin=0pt,
+}
+
+\newcommand{\cmd}[1]{\texttt{#1}}
+
+\definecolor{codebg}{gray}{0.96}
+\definecolor{comment}{gray}{0.45}
+\definecolor{keyword}{RGB}{0, 75, 150}
+\definecolor{string}{RGB}{150, 80, 30}
+\definecolor{number}{gray}{0.5}
+
+\lstdefinestyle{coolprint}{
+  basicstyle   = \ttfamily\footnotesize,
+  keywordstyle = \bfseries\color{keyword},
+  commentstyle = \itshape\color{comment},
+  stringstyle  = \color{string},
+  backgroundcolor = \color{codebg},
+  numbers      = left,
+  numberstyle  = \footnotesize\color{number},
+  numbersep    = 5pt,
+  frame        = single,
+  framerule    = 0.8pt,
+  framesep     = 3pt,
+  breaklines   = true,
+  breakatwhitespace = true,
+  tabsize      = 4,
+  showspaces   = false,
+  showstringspaces = false,
+  xleftmargin  = 10pt,
+  xrightmargin = 5pt,
+  aboveskip    = \medskipamount,
+  belowskip    = \medskipamount,
+  captionpos   = b,
+}
+
+\usepackage{ragged2e}
+\justifying
+
+\titleformat{\section}{\centering\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\centering\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+\begin{center}
+  \textbf{МИНОБРНАУКИ РОССИИ} \\
+  \textbf{Санкт-Петербургский государственный} \\
+  \textbf{электротехнический университет} \\
+  \textbf{«ЛЭТИ» им. В.И. Ульянова (Ленина)} \\
+  \textbf{Кафедра САПР} \\
+\end{center}
+
+\vspace{0.25\textheight}
+
+\begin{center}
+\textbf{Практическая работа №3} \\
+\textbf{по дисциплине} \\
+\textbf{«Объектно-ориентированное программирование»} \\
+\end{center}
+
+\vspace*{\fill}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{ l X r }
+ Студент гр. 5352 & \rule{8cm}{0.2mm} & Соболевский М.А. \\
+ Преподаватель & \rule{8cm}{0.2mm} & Кулагин М.В. \\
+\end{tabularx}
+\end{center}
+
+\vspace{3em}
+
+\begin{center}
+Санкт-Петербург\\
+\the\year
+\end{center}
+
+\thispagestyle{empty}
+
+\pagebreak
+
+\section{Задание}
+
+Разработать консольное приложение для работы с двумя
+файлами-справочниками городов (в форматах CSV и XML). Приложение
+принимает путь к файлу, разбирает его и выводит статистику:
+список дублирующихся записей с количеством повторений,
+распределение зданий по этажам в каждом городе, время обработки.
+После вывода статистики приложение снова ждёт ввода пути или
+команды завершения.
+
+Парсеры CSV и XML должны иметь общий интерфейс, чтобы добавление
+нового формата не требовало переписывать остальную логику.
+Программа не должна падать на некорректном вводе; выход только по
+команде пользователя.
+
+\section{Спецификация программы}
+
+\subsection{Общая архитектура}
+
+Архитектура построена вокруг двух абстракций: \cmd{AbstractParser}
+и \cmd{ParserSelector}. Диаграмма классов приведена на
+рисунке~\ref{fig:classes}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{build/parser-classes}
+\caption{Диаграмма классов}
+\label{fig:classes}
+\end{figure}
+
+\cmd{AbstractParser}~--- абстрактный класс с единственным
+публичным методом \cmd{parseFile}, в котором реализован общий
+алгоритм: открыть источник, в цикле читать записи, закрыть
+источник, собрать статистику. Три из этих шагов зависят от
+формата файла и объявлены абстрактными: \cmd{initParser},
+\cmd{parseRecord}, \cmd{close}. Конкретные парсеры
+(\cmd{CSVParser} и \cmd{XMLParser}) переопределяют только их.
+
+За счёт этого подсчёт статистики написан один раз, а отличия
+форматов изолированы в наследниках. Если понадобится добавить
+третий формат, достаточно написать ещё одного наследника с тремя
+методами~--- остальной код трогать не придётся.
+
+\cmd{ParserSelector<T>}~--- интерфейс для выбора парсера по ключу
+типа~\cmd{T}. В текущей реализации ключ~--- расширение файла
+(\cmd{ExtensionParserSelector}). Обобщённость позволяет при
+необходимости сделать селектор по MIME-типу или по содержимому
+файла, не меняя интерфейс.
+
+\cmd{ParserSelectorFactory} собирает \cmd{ExtensionParserSelector}
+из списка зарегистрированных парсеров. Список задан статически, а
+расширение каждого парсера хранится в публичном статическом поле
+\cmd{extension}. Фабрика читает это поле через рефлексию и
+регистрирует парсер в селекторе. Если добавить новый парсер, нужно
+только дописать его в список~--- регистрация произойдёт
+автоматически.
+
+\subsection{Модель данных}
+
+Запись описывается классом \cmd{Record} с четырьмя полями:
+город, улица, номер дома, этаж. Все поля объявлены \cmd{final},
+чтобы запись нельзя было изменить после создания. Это нужно,
+потому что \cmd{Record} используется как ключ в \cmd{HashMap}
+и как элемент в \cmd{HashSet}. Методы \cmd{equals} и
+\cmd{hashCode} реализованы вручную~--- сравнение по всем четырём
+полям.
+
+\cmd{Report} хранит результат обработки одного файла: длительность
+обработки, словарь дубликатов (запись~$\to$~сколько раз
+встретилась) и статистику по этажам. Формат вывода (метод
+\cmd{toString}) отделён от самого расчёта~--- если понадобится
+другой формат, меняется только \cmd{toString}.
+
+\subsection{Иерархия парсеров}
+
+\cmd{CSVParser} использует библиотеку \cmd{fastcsv}. При
+инициализации открывает файл и пропускает строку заголовков, при
+каждом вызове \cmd{parseRecord} читает одну строку и превращает
+её в \cmd{Record}.
+
+\cmd{XMLParser} использует StAX~--- потоковый парсер из
+стандартной библиотеки Java. При инициализации открывает поток,
+при каждом вызове \cmd{parseRecord} ищет очередной элемент
+\cmd{item} и читает из него атрибуты. Использован именно
+потоковый парсер, а не DOM, потому что DOM загружает в память
+всё дерево, а для справочника это лишнее. При большом файле
+разница будет заметной.
+
+Оба парсера читают файл по частям, а не целиком.
+
+\subsection{Сбор статистики}
+
+\cmd{parseFile} делает три вещи. Инициализирует парсер. В цикле
+читает записи: каждую пробует добавить в \cmd{HashSet}. Если
+добавилось, то это новая запись, нужно увеличить счётчик для её
+этажа в соответствующем городе. Если не добавилось, то это
+дубликат, нужно увеличить счётчик в словаре дубликатов. По
+завершении закрывает парсер в \cmd{finally}.
+
+Время замеряется через \cmd{Instant.now()} до открытия файла и
+после закрытия. Разница оборачивается в \cmd{Duration} и попадает
+в \cmd{Report}.
+
+\section{Описание интерфейса пользователя программы}
+
+\lstset{style=session}
+
+Программа работает в режиме диалога. После запуска выводит
+приглашение:
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename:
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+Пользователь вводит путь к файлу. Если расширение распознано и
+файл успешно открывается, программа обрабатывает его и печатает
+статистику. После вывода статистики снова появляется приглашение.
+
+Завершение работы~--- по вводу команды \cmd{exit} (или \cmd{quit})
+либо по комбинации \texttt{Ctrl+D} (сигнал EOF на стандартном
+вводе). В обоих случаях программа корректно закрывает ресурсы и
+завершается с кодом~0.
+
+При любой ошибке (несуществующий путь, неизвестное расширение,
+повреждённый файл) программа печатает сообщение об ошибке и
+возвращается к приглашению. Завершения по ошибке не происходит.
+
+\section{Примеры работы}
+
+Строки, которые вводит пользователь, набраны после приглашения
+\cmd{Enter filename:}; остальные~--- вывод программы.
+
+\subsection{Обработка CSV-файла}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename: data.csv
+Time processing: 0.023s
+Duplicates:
+    {city: Барнаул, street: Дальняя улица, house: 56, floor: 2} repeated 2 times
+Floors:
+    Барнаул:
+        1: 3 buildings
+        2: 7 buildings
+        3: 2 buildings
+        4: 1 building
+        5: 5 buildings
+    Братск:
+        1: 2 buildings
+        2: 4 buildings
+        3: 1 building
+        4: 0 buildings
+        5: 3 buildings
+    ...
+
+Enter filename:
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Обработка XML-файла}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename: data.xml
+Time processing: 0.041s
+Duplicates:
+    {city: Азов, street: Просека, улица, house: 156, floor: 3} repeated 3 times
+Floors:
+    Азов:
+        1: 0 buildings
+        2: 1 building
+        3: 5 buildings
+        4: 0 buildings
+        5: 2 buildings
+    ...
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Ошибка: файл не найден}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename: nonexistent.csv
+error: file not found: nonexistent.csv
+Enter filename:
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Ошибка: неизвестное расширение}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename: data.json
+error: no parser registered for extension .json
+Enter filename:
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\subsection{Завершение работы}
+
+\renewcommand{\baselinestretch}{1}
+\begin{lstlisting}
+Enter filename: exit
+$
+\end{lstlisting}
+\renewcommand{\baselinestretch}{1.5}
+
+\section{Текст программы}
+\lstset{style=coolprint}
+
+\renewcommand{\baselinestretch}{1}
+\subsection*{Main.java}
+\lstinputlisting[language=Java]{src/main/java/impl/Main.java}
+
+\subsection*{AbstractParser.java}
+\lstinputlisting[language=Java]{src/main/java/impl/AbstractParser.java}
+
+\subsection*{ParserSelector.java}
+\lstinputlisting[language=Java]{src/main/java/impl/ParserSelector.java}
+
+\subsection*{ExtensionParserSelector.java}
+\lstinputlisting[language=Java]{src/main/java/impl/parserSelectors/ExtensionParserSelector.java}
+
+\subsection*{ParserSelectorFactory.java}
+\lstinputlisting[language=Java]{src/main/java/impl/ParserSelectorFactory.java}
+
+\subsection*{Record.java}
+\lstinputlisting[language=Java]{src/main/java/impl/Record.java}
+
+\subsection*{Report.java}
+\lstinputlisting[language=Java]{src/main/java/impl/Report.java}
+
+\subsection*{CSVParser.java}
+\lstinputlisting[language=Java]{src/main/java/impl/parsers/CSVParser.java}
+
+\subsection*{XMLParser.java}
+\lstinputlisting[language=Java]{src/main/java/impl/parsers/XMLParser.java}
+\renewcommand{\baselinestretch}{1.5}
+
+\section{Выводы}
+
+В ходе работы было написано консольное приложение на Java для
+разбора справочников городов в двух форматах. Основная задача
+была не в самом разборе файлов (это стандартная операция,
+поддержана библиотеками), а в том, чтобы правильно организовать
+код так, чтобы форматы не «протекали» в остальную программу.
+
+За счёт выделения абстрактного класса с общим алгоритмом удалось
+избежать дублирования логики: подсчёт статистики и замер времени
+написаны один раз и работают одинаково для CSV и XML. Добавление
+нового формата сводится к реализации трёх методов~--- никакие
+другие файлы трогать не нужно. То же самое с селектором парсеров:
+интерфейс обобщённый, так что при необходимости можно сделать
+другую реализацию (например, по содержимому файла) без изменения
+кода, который её использует.
+
+Из технических решений, о которых стоит упомянуть:
+использование рефлексии для чтения поля \cmd{extension}
+избавляет от отдельного списка расширений; неизменяемая модель
+записи с корректными \cmd{equals} и \cmd{hashCode} позволяет
+использовать её как ключ в \cmd{HashMap}; потоковые парсеры
+(fastcsv и StAX) читают файл по частям и не требуют загружать
+его в память целиком.
+
+Ограничения текущей версии: обработка ошибок ввода-вывода
+реализована через \cmd{try/catch} на верхнем уровне, подробной
+диагностики нет; список регистрируемых парсеров задан статически,
+автоматического сканирования по всему classpath нет. Обе вещи при
+необходимости легко расширяются.
+
+\end{document}

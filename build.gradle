@@ -34,3 +34,62 @@ jar {
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
 }
+
+
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
+
+abstract class CompileLatexTask extends DefaultTask {
+    @InputFile  abstract RegularFileProperty getTexFile()
+    @Input      abstract Property<Integer>   getPasses()
+    @OutputFile abstract RegularFileProperty getPdfFile()
+
+    @Inject abstract ExecOperations getExecOps()
+
+    @TaskAction
+    void compile() {
+        def tex = texFile.get().asFile
+        def dir = tex.parentFile          // project root
+        def engine = 'pdflatex'
+        def baseName = tex.name.replaceAll(/\.tex$/, '')
+
+        passes.get().times {
+            execOps.exec {
+                workingDir = dir
+                commandLine engine, '-interaction=nonstopmode', '-halt-on-error', tex.name
+            }
+        }
+
+        def produced = new File(dir, "${baseName}.pdf")
+        if (!produced.exists()) throw new GradleException("No PDF produced at ${produced}")
+        produced.renameTo(pdfFile.get().asFile)
+    }
+}
+
+abstract class DotToPngTask extends DefaultTask {
+    @InputFile abstract RegularFileProperty getDotFile()
+    @OutputFile abstract RegularFileProperty getPngFile()
+
+    @Inject abstract ExecOperations getExecOps()
+
+    @TaskAction
+    void run() {
+        def dot = dotFile.get().asFile
+        def png = pngFile.get().asFile
+        execOps.exec {
+            commandLine 'dot', '-Tpng', dot, '-o', png
+        }
+    }
+}
+
+tasks.register('dotToPng', DotToPngTask) {
+    dotFile = layout.projectDirectory.file('src/assets/dot/parser-classes.dot')
+    pngFile = layout.buildDirectory.file('parser-classes.png')
+}
+
+tasks.register('compilePdf', CompileLatexTask) {
+    dependsOn 'dotToPng'
+    texFile = layout.projectDirectory.file('report.tex')
+    passes  = 2
+    pdfFile = layout.buildDirectory.file('report.pdf')
+}
