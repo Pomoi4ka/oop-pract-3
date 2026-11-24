@@ -7,29 +7,40 @@ import java.util.Optional;
 import impl.parserSelectors.ExtensionParserSelector;
 
 public class Main {
-    private void run(Path path) {
+    private void run(Path path) throws Exception {
         ExtensionParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
         String pathStringLowerCase = path.toString().toLowerCase();
-        String ext = pathStringLowerCase.substring(pathStringLowerCase.lastIndexOf('.'));
+        int dot = pathStringLowerCase.lastIndexOf('.');
+        if (dot < 0) {
+            System.err.println("error: no extension");
+            return;
+        }
+        String ext = pathStringLowerCase.substring(dot);
         Optional<AbstractParser> parser = selector.select(ext);
         if (!parser.isPresent()) {
             System.err.printf("error: no parser found for extension %s\n", ext);
-            System.exit(1);
+            return;
         }
 
-        try {
-            Report report = parser.get().parseFile(path);
-            System.out.println(report);
-        } catch (Exception e) {
-            System.err.println(e);
-            System.exit(1);
-        }
+        Report report = parser.get().parseFile(path);
+        System.out.println(report);
     }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter filename: ");
-        Path path = Path.of(scanner.nextLine());
-        new Main().run(path);
+        Main app = new Main();
+        for (;;) {
+            System.out.print("Enter filename: ");
+            if (!scanner.hasNextLine()) break;
+            String line = scanner.nextLine().trim();
+            if (line.isEmpty()
+                || line.equals("quit")
+                || line.equals("exit")) break;
+            try {
+                app.run(Path.of(line));
+            } catch (Exception e) {
+                System.err.println("error: " + e);
+            }
+        }
     }
 }
