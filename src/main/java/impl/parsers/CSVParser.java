@@ -13,7 +13,7 @@ public class CSVParser extends AbstractParser {
     public static final String extension = ".csv";
 
     Iterator<CsvRecord> iter;
-    CsvReader reader;
+    CsvReader<CsvRecord> reader;
 
     @Override
     protected void close() throws IOException {
