@@ -8,7 +8,7 @@ import impl.parserSelectors.ExtensionParserSelector;
 
 public class Main {
     private void run(Path path) throws Exception {
-        ExtensionParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
+        ParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
         String pathStringLowerCase = path.toString().toLowerCase();
         int dot = pathStringLowerCase.lastIndexOf('.');
         if (dot < 0) {
