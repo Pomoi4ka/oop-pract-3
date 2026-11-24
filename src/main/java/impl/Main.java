@@ -1,6 +1,7 @@
 package impl;
 
 import java.nio.file.Path;
+import java.nio.file.NoSuchFileException;
 import java.util.Scanner;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public class Main {
         String ext = pathStringLowerCase.substring(dot);
         Optional<AbstractParser> parser = selector.select(ext);
         if (!parser.isPresent()) {
-            System.err.printf("error: no parser found for extension %s\n", ext);
+            System.err.printf("error: no parser registered for extension %s\n", ext);
             return;
         }
 
@@ -36,6 +37,8 @@ public class Main {
                 || line.equals("exit")) break;
             try {
                 app.run(Path.of(line));
+            } catch (NoSuchFileException e) {
+                System.err.println("error: file not found: " + e.getMessage());
             } catch (Exception e) {
                 System.err.println("error: " + e);
             }

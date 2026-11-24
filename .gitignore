@@ -8,3 +8,8 @@ build
 .kotlin
 
 *~
+report.aux
+report.log
+report.toc
+report.out
+missfont.log

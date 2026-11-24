@@ -1,0 +1,100 @@
+// Диаграмма классов для отчёта по ПР3
+// dot -Tsvg parser-classes.dot -o parser-classes.svg
+
+digraph ParserArchitecture {
+    rankdir=TB;
+    compound=true;
+    fontname="Helvetica";
+    fontsize=11;
+    node [shape=box, style="rounded", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9, fontcolor="#444444"];
+
+    main [
+        label="{Main|+ main(args : String[]) : void\l- run(path : Path) : void\l}"
+    ];
+
+    abs_parser [
+        label="{«abstract»\lAbstractParser|\
++ parseFile(path : Path) : Report\l\
+# initParser(path : Path) : void\l\
+# parseRecord() : Record\l\
+# close() : void\l}"
+    ];
+
+    csv_parser [
+        label="{CSVParser|\
++ extension : String = \".csv\"\l\
+- reader : CsvReader\l\
+- iter : Iterator<CsvRecord>\l\
+# initParser(path)\l\
+# parseRecord() : Record\l\
+# close()\l}"
+    ];
+
+    xml_parser [
+        label="{XMLParser|\
++ extension : String = \".xml\"\l\
+- reader : XMLStreamReader\l\
+- bufReader : BufferedReader\l\
+# initParser(path)\l\
+# parseRecord() : Record\l\
+# close()\l}"
+    ];
+
+    selector_iface [
+        label="{«interface»\lParserSelector<T>|\
++ register(from : T, to : AbstractParser)\l\
++ select(from : T) : Optional<AbstractParser>\l}"
+    ];
+
+    ext_selector [
+        label="{ExtensionParserSelector|\
+- table : Map<String, AbstractParser>\l\
++ register(from : String, to : AbstractParser)\l\
++ select(from : String) : Optional<AbstractParser>\l}"
+    ];
+
+    selector_factory [
+        label="{ParserSelectorFactory|\
+- parsers : List<Class<? extends AbstractParser>>\l\
++ buildExtensionParserSelector() : ExtensionParserSelector\l}"
+    ];
+
+    record [
+        label="{Record|\
+~ city : String\l\
+~ street : String\l\
+~ house : int\l\
+~ floor : int\l\
++ Record(city, street, house, floor)\l\
++ equals(obj : Object) : boolean\l\
++ hashCode() : int\l\
++ toString() : String\l}"
+    ];
+
+    report [
+        label="{Report|\
+- timeSpent : Duration\l\
+- duplicates : Map<Record, Integer>\l\
+- floors : Map<Integer, Integer>\l\
++ Report(time, dups, floors)\l\
++ toString() : String\l}"
+    ];
+
+    main -> abs_parser      [label=" parseFile", arrowhead=vee];
+    main -> ext_selector    [label=" select(ext)", arrowhead=vee];
+    main -> selector_factory[label=" buildSelector", arrowhead=vee];
+    main -> report          [label=" print", arrowhead=vee];
+
+    csv_parser -> abs_parser [label=" extends", arrowhead=empty];
+    xml_parser -> abs_parser [label=" extends", arrowhead=empty];
+
+    ext_selector -> selector_iface [label=" implements", arrowhead=empty, style=dashed];
+    selector_factory -> ext_selector [label=" creates", arrowhead=vee];
+    selector_factory -> csv_parser   [label=" reflect", style=dashed, arrowhead=vee];
+    selector_factory -> xml_parser   [label=" reflect", style=dashed, arrowhead=vee];
+
+    abs_parser -> record [label=" creates", style=dashed, arrowhead=vee];
+    abs_parser -> report [label=" creates", style=dashed, arrowhead=vee];
+    report -> record     [label=" keys", arrowhead=vee];
+}
