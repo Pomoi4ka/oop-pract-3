@@ -4,11 +4,9 @@ import java.nio.file.Path;
 import java.util.Scanner;
 import java.util.Optional;
 
-import impl.parserSelectors.ExtensionParserSelector;
-
 public class Main {
     private void run(Path path) throws Exception {
-        ParserSelector selector = ParserSelectorFactory.buildExtensionParserSelector();
+        ParserSelector<String> selector = ParserSelectorFactory.buildExtensionParserSelector();
         String pathStringLowerCase = path.toString().toLowerCase();
         int dot = pathStringLowerCase.lastIndexOf('.');
         if (dot < 0) {

@@ -14,7 +14,7 @@ class ParserSelectorFactory {
         List.of(CSVParser.class,
                 XMLParser.class);
 
-    public static ParserSelector buildExtensionParserSelector() {
+    public static ParserSelector<String> buildExtensionParserSelector() {
         ExtensionParserSelector selector = new ExtensionParserSelector();
         for (Class<? extends AbstractParser> clazz : parsers) {
             String extension;
