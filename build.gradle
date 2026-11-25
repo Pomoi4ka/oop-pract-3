@@ -35,61 +35,59 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
 }
 
+def texFile    = file('report.tex')
+def dotDir     = file('src/assets/dot')
+def reportDir  = layout.buildDirectory.dir('report')
+def workDir    = projectDir
 
-import org.gradle.process.ExecOperations
-import javax.inject.Inject
+tasks.register('renderDiagrams') {
+    def outDir = layout.buildDirectory.dir('report/assets')
 
-abstract class CompileLatexTask extends DefaultTask {
-    @InputFile  abstract RegularFileProperty getTexFile()
-    @Input      abstract Property<Integer>   getPasses()
-    @OutputFile abstract RegularFileProperty getPdfFile()
+    inputs.dir(dotDir)
+    outputs.dir(outDir)
 
-    @Inject abstract ExecOperations getExecOps()
-
-    @TaskAction
-    void compile() {
-        def tex = texFile.get().asFile
-        def dir = tex.parentFile          // project root
-        def engine = 'pdflatex'
-        def baseName = tex.name.replaceAll(/\.tex$/, '')
-
-        passes.get().times {
-            execOps.exec {
-                workingDir = dir
-                commandLine engine, '-interaction=nonstopmode', '-halt-on-error', tex.name
+    doLast {
+        def dir = outDir.get().asFile
+        dir.mkdirs()
+        dotDir.eachFileMatch(~/.*\.dot/) { f ->
+            def target = new File(dir, f.name.replace('.dot', '.png'))
+            def proc = new ProcessBuilder(
+                'dot', '-Tpng', '-o', target.absolutePath, f.absolutePath
+            ).redirectErrorStream(true).start()
+            def out = proc.inputStream.text
+            if (proc.waitFor() != 0) {
+                throw new GradleException("dot failed on ${f.name}:\n$out")
             }
         }
-
-        def produced = new File(dir, "${baseName}.pdf")
-        if (!produced.exists()) throw new GradleException("No PDF produced at ${produced}")
-        produced.renameTo(pdfFile.get().asFile)
     }
 }
 
-abstract class DotToPngTask extends DefaultTask {
-    @InputFile abstract RegularFileProperty getDotFile()
-    @OutputFile abstract RegularFileProperty getPngFile()
+tasks.register('buildReport') {
+    dependsOn 'renderDiagrams'
 
-    @Inject abstract ExecOperations getExecOps()
+    def tex = file('report.tex')
+    def outDir = layout.buildDirectory.dir('report')
 
-    @TaskAction
-    void run() {
-        def dot = dotFile.get().asFile
-        def png = pngFile.get().asFile
-        execOps.exec {
-            commandLine 'dot', '-Tpng', dot, '-o', png
+    inputs.file(tex)
+    inputs.dir(file('src/main/java'))
+    inputs.dir(layout.buildDirectory.dir('report/assets'))
+    outputs.file(outDir.map { it.file('report.pdf') })
+
+    doLast {
+        def dir = outDir.get().asFile
+        dir.mkdirs()
+        ['-interaction=nonstopmode', '-halt-on-error',
+         '-output-directory', dir.absolutePath, tex.absolutePath].with { args ->
+            // два прохода для \ref
+            2.times {
+                def proc = new ProcessBuilder(['pdflatex'] + args)
+                    .directory(workDir)
+                    .redirectErrorStream(true).start()
+                def out = proc.inputStream.text
+                if (proc.waitFor() != 0) {
+                    throw new GradleException("pdflatex failed:\n$out")
+                }
+            }
         }
     }
-}
-
-tasks.register('dotToPng', DotToPngTask) {
-    dotFile = layout.projectDirectory.file('src/assets/dot/parser-classes.dot')
-    pngFile = layout.buildDirectory.file('parser-classes.png')
-}
-
-tasks.register('compilePdf', CompileLatexTask) {
-    dependsOn 'dotToPng'
-    texFile = layout.projectDirectory.file('report.tex')
-    passes  = 2
-    pdfFile = layout.buildDirectory.file('report.pdf')
 }
